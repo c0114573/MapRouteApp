@@ -137,6 +137,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         gMap = googleMap;
 
+        confirmPermission();
 
 ///////////////     ここから
 //        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -150,7 +151,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 //            return;
 //        }
 ///////////////        ここまで自動で追加したもの。要確認
-               gMap.setMyLocationEnabled(true);
+        gMap.setMyLocationEnabled(true);
 
         // 初期位置
         LatLng farstlocation = new LatLng(35.6263035, 139.3371608);
@@ -406,12 +407,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             case MENU_D:
                 // スレッド処理開始
-                if(RouteList.size()!=0) {
+                if (RouteList.size() != 0) {
                     Toast.makeText(this, "経路案内を開始します", Toast.LENGTH_SHORT).show();
                     route_point = 0;
                     this.mThread = new Thread(null, mTask, "show_mapInfo");
                     this.mThread.start();
-                }else {
+                } else {
                     Toast.makeText(this, "経路を設定してください", Toast.LENGTH_LONG).show();
                 }
                 return true;
@@ -505,7 +506,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-
     // 経路案内処理
     private void route_invite() {
         String str = "";
@@ -525,10 +525,25 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         float results = getDistanceBetween(MyLatitude, MyLongitude, durationLatitude, durationLongitude);
 
-        // 指定範囲内 10以内
-        if (results < 10) {
+        Log.i("現在地", "" + MyLatitude + "," + MyLongitude);
+        Log.i("距離", "" + results);
+        Log.i("配列", "経路番号" + route_point+","+ "経路総数:" + RouteList.size());
 
-            str = RouteList.get(route_point + 1).duration_value;
+
+        // 指定範囲内 5m以内
+        if (results < 5 * 1000) {
+
+            try {
+                str = RouteList.get(route_point + 1).duration_value;
+            }catch (IndexOutOfBoundsException e){
+                setTitle("到着");
+                Toast.makeText(this, "到着", Toast.LENGTH_LONG).show();
+                // 終了を知らせる何か処理
+                // スレッド停止
+                this.mThread.interrupt();
+                this.mThreadActive = false;
+                return;
+            }
 
             if ((str.contains("右折")) || (str.contains("右方向")) || (str.contains("大きく右")) || (str.contains("斜め右"))) {
                 // UDP通信でESPに送る為の場所
@@ -536,6 +551,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 address = "192.168.4.1"; // 受信側端末の実際のアドレスに書き換える
                 port = 8888;       // 受信側と揃える
                 udp.trans(message, address, port);
+                Log.i("範囲内処理結果", "右折");
 
             } else if (str.contains("左折") || (str.contains("左方向")) || (str.contains("大きく左")) || (str.contains("斜め左"))) {
                 // ヴイィィィーン処理
@@ -543,17 +559,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 address = "192.168.4.1"; // 受信側端末の実際のアドレスに書き換える
                 port = 8888;// 受信側と揃える
                 udp.trans(message, address, port);
+                Log.i("範囲内処理結果", "左折");
 
             } else {
-
-
+                Log.i("範囲内処理結果", "道なりに進む?");
             }
 
             route_point++;
         }
 
         // 終了処理
-        if (route_point > RouteList.size()) {
+        if (route_point >= RouteList.size()-1) {
+            setTitle("到着");
             Toast.makeText(this, "到着", Toast.LENGTH_LONG).show();
             // 終了を知らせる何か処理
             // スレッド停止
@@ -607,8 +624,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[],
-                                           int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         if (requestCode == MY_LOCATION_REQUEST_CODE) {
             // よくサンプルコードでは以下のように引数でパーミッションチェックしています。
             //if (permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION) &&
@@ -658,7 +674,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.i("MainActivity","Called_onDestroy");
+        Log.i("MainActivity", "Called_onDestroy");
         try {
             mLocationManager.removeUpdates((android.location.LocationListener) mLocationManager);
 
@@ -712,6 +728,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng myLocation = new LatLng(location.getLatitude(), location.getLongitude());
         gMap.addMarker(new MarkerOptions().position(myLocation).title("now Location"));
         gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 18));
+        MyLatitude = location.getLatitude();
+        MyLongitude = location.getLongitude();
     }
 
 }

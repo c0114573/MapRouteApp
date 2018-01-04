@@ -68,7 +68,7 @@ public class parseJsonpOfDirectionAPI {
 
                         String instructions = (String) ((JSONObject) (JSONObject) jsonSteps.get(k)).getString("html_instructions");
                         instructions = instructions.replaceAll("<.+?>", "");
-                        Log.i("AAAAAAAAAAAAAAAA", instructions);
+//                        Log.i("AAAAAAAAAAAAAAAA", instructions);
 
 
 //                        route.add(instructions);
@@ -111,9 +111,9 @@ public class parseJsonpOfDirectionAPI {
 
                         RouteList.add(rl);
 
-                        Log.i("AAA", rl.instructions);
-                        Log.i("BBB", rl.duration_value);
-                        Log.i("CCC", rl.duration_txt);
+//                        Log.i("AAA", rl.instructions);
+//                        Log.i("BBB", rl.duration_value);
+//                        Log.i("CCC", rl.duration_txt);
                         // Log.d("Nakata", RouteList.get(k).instructions);
 
                     }
